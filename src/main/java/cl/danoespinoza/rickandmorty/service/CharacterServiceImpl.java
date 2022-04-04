@@ -1,19 +1,13 @@
 package cl.danoespinoza.rickandmorty.service;
 
-import java.util.List;
-
-import javax.annotation.PostConstruct;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
 
 import cl.danoespinoza.rickandmorty.pojo.Character;
 import cl.danoespinoza.rickandmorty.pojo.Location;
@@ -31,11 +25,6 @@ public class CharacterServiceImpl implements CharacterService {
 	@Value("${rickandmorty.character-endpoint}")
 	private String characterEndpoint;
 	
-	@PostConstruct
-    private void postConstruct() {
-		httpHeaders.setAccept(List.of(MediaType.APPLICATION_JSON));
-    }
-	
 	@Override
     public Character getCharacterById(Integer id) {
 		HttpEntity<Object> entity = new HttpEntity<Object>(httpHeaders);
@@ -47,10 +36,7 @@ public class CharacterServiceImpl implements CharacterService {
         character.setEpisodeCount(character.getEpisode().size());
         
         if (character.getOrigin() != null && StringUtils.isNotEmpty(character.getOrigin().getUrl())) {
-        	ResponseEntity<Location> locationResponse = restTemplate.exchange(
-            		character.getOrigin().getUrl(), HttpMethod.GET, entity, Location.class);
-            
-            Location location = locationResponse.getBody();
+            Location location = this.getLocationByUrl(character.getOrigin().getUrl());
             
             character.getOrigin().setId(location.getId());
             character.getOrigin().setDimension(location.getDimension());
@@ -60,4 +46,13 @@ public class CharacterServiceImpl implements CharacterService {
         return character;
     }
 
+    @Override
+    public Location getLocationByUrl(String url) {
+        HttpEntity<Object> entity = new HttpEntity<Object>(httpHeaders);
+
+        ResponseEntity<Location> locationResponse = restTemplate.exchange(
+            url, HttpMethod.GET, entity, Location.class);
+            
+        return locationResponse.getBody();
+    }
 }
